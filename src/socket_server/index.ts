@@ -1,4 +1,4 @@
-import { WebSocketServer } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
 import { ISocketServer, IService } from './interfaces';
 import { MouseNavService } from './navigation';
 import { DrawingService } from './drawing';
@@ -21,15 +21,21 @@ export class ServerSocket implements ISocketServer {
   start(): void {
     this.socket.on('connection', (ws, req) => {
       console.log(`HttpServer connected to WebSocketServer on port ${this.socket.options.port} successful`);
-      this.timerId = setInterval(() => {}, 100);
 
-      ws.on('message', (data: Buffer) => {
+      this.timerId = setInterval(() => {}, 100);
+      const duplex = WebSocket.createWebSocketStream(ws, {decodeStrings: false});
+
+      duplex.on('error', (err: Event) => console.log(err));
+
+      duplex.on('data', (data: Buffer) => {
         this.processData(data).then(res => {
-          ws.send(res);
+          if (res) {
+            duplex.write(res);
+          }
         });
-        
       });
     });
+
     this.addCloseListeners();
   }
 
