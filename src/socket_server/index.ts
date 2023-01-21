@@ -2,6 +2,7 @@ import { WebSocketServer } from 'ws';
 import { ISocketServer, IService } from './interfaces';
 import { MouseNavService } from './navigation';
 import { DrawingService } from './drawing';
+import { PrintScreenService } from './print-screen';
 
 
 export class ServerSocket implements ISocketServer {
@@ -14,6 +15,7 @@ export class ServerSocket implements ISocketServer {
     this.services = new Map();
     this.services.set(MouseNavService.getKey(), new MouseNavService());
     this.services.set(DrawingService.getKey(), new DrawingService());
+    this.services.set(PrintScreenService.getKey(), new PrintScreenService());
   }
 
   start(): void {
