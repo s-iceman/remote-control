@@ -12,9 +12,9 @@ type commandInfo = {
 }
 
 enum Commands {
-  INVALID = 0,
-  MOVE = 1,
-  GET_POS = 2,
+  INVALID = 'invalid',
+  MOVE = 'move',
+  GET_POS = 'position',
 };
 
 enum Directions {
@@ -40,15 +40,16 @@ export class MouseNavService implements IService {
     return 'mouse';
   }
 
-  async process(data: Buffer): Promise<void> {
+  async process(data: Buffer): Promise<string> {
     const { commandType, params } = this.parseData(data);
     if (commandType === Commands.MOVE) {
       const {direction, offset} = params;
       const [command, correctedOffset] = this.moveCommands[direction];
       await mouse.move(command?.(offset));
+      return `${direction}_${offset}`;
     } else if (commandType === Commands.GET_POS) {
       const pos = await mouse.getPosition();
-      console.log(`position ${pos}`);
+      return `${commandType}_${pos.x},${pos.y}`;
     }
   }
 

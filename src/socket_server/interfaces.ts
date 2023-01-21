@@ -3,7 +3,7 @@ interface ISocketServer {
 };
 
 interface IService {
-  process(data: Buffer): Promise<void>;
+  process(data: Buffer): Promise<string>;
 }
 
 export {

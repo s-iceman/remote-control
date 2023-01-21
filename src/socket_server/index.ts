@@ -1,7 +1,7 @@
 import { WebSocketServer } from 'ws';
-import { Readable } from 'node:stream';
 import { ISocketServer, IService } from './interfaces';
 import { MouseNavService } from './navigation';
+import { DrawingService } from './drawing';
 
 
 export class ServerSocket implements ISocketServer {
@@ -13,11 +13,12 @@ export class ServerSocket implements ISocketServer {
     this.socket = new WebSocketServer({port: port});
     this.services = new Map();
     this.services.set(MouseNavService.getKey(), new MouseNavService());
+    this.services.set(DrawingService.getKey(), new DrawingService());
   }
 
   start(): void {
     this.socket.on('connection', (ws, req) => {
-      console.log(`HttpServer connected to WebSocketServer ${req.socket.remoteAddress} successful`);
+      console.log(`HttpServer connected to WebSocketServer on port ${this.socket.options.port} successful`);
       this.timerId = setInterval(() => {}, 100);
 
       ws.on('message', (data: Buffer) => {
@@ -37,8 +38,8 @@ export class ServerSocket implements ISocketServer {
     if (!processor) {
       return '';
     }
-    await processor.process(data.slice(sepPos + 1));
-    return data.toString('utf8').replace(' ', '_');
+    const res = await processor.process(data.slice(sepPos + 1));
+    return `${command}_${res}`;
   }
 
   private addCloseListeners(): void {
