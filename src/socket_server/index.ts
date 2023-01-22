@@ -1,14 +1,14 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import { ISocketServer, IService } from './interfaces';
+import { ISocketServer, IService, Result } from './interfaces';
 import { MouseNavService } from './navigation';
 import { DrawingService } from './drawing';
 import { PrintScreenService } from './print-screen';
 
 
 export class ServerSocket implements ISocketServer {
-  socket: WebSocketServer;
-  timerId: NodeJS.Timer;
-  services: Map<string, IService>;
+  private socket: WebSocketServer;
+  private timerId: NodeJS.Timer;
+  private services: Map<string, IService>;
 
   constructor(port: number) {
     this.socket = new WebSocketServer({port: port});
@@ -19,7 +19,7 @@ export class ServerSocket implements ISocketServer {
   }
 
   start(): void {
-    this.socket.on('connection', (ws, req) => {
+    this.socket.on('connection', (ws: WebSocket) => {
       console.log(`HttpServer connected to WebSocketServer on port ${this.socket.options.port} successful`);
 
       this.timerId = setInterval(() => {}, 100);
@@ -27,10 +27,14 @@ export class ServerSocket implements ISocketServer {
 
       duplex.on('error', (err: Event) => console.log(err));
 
-      duplex.on('data', (data: Buffer) => {
-        this.processData(data).then(res => {
-          if (res) {
-            duplex.write(res);
+      duplex.on('data', async (data: Buffer) => {
+        await this.processData(data).then(res => {
+          const { command, answerData } = res;
+          console.log(`Processed: ${command}`);
+          if (answerData) {
+            duplex.write(answerData);
+          } else {
+            duplex.write(command);
           }
         });
       });
@@ -39,15 +43,14 @@ export class ServerSocket implements ISocketServer {
     this.addCloseListeners();
   }
 
-  private async processData(data: Buffer): Promise<string> {
+  private async processData(data: Buffer): Promise<Result> {
     const sepPos = data.indexOf('_');
     const command = data.slice(0, sepPos).toString();
     const processor: IService | undefined = this.services.get(command);
     if (!processor) {
-      return '';
+      return { command: 'Invalid command' };
     }
-    const res = await processor.process(data.slice(sepPos + 1));
-    return `${command}_${res}`;
+    return await processor.process(data.slice(sepPos + 1));
   }
 
   private addCloseListeners(): void {

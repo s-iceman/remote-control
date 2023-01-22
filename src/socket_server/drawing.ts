@@ -1,4 +1,4 @@
-import { IService } from './interfaces';
+import { IService, Result } from './interfaces';
 import { mouse, straightTo, Point, Button } from '@nut-tree/nut-js';
 
 
@@ -15,7 +15,8 @@ type commandInfo = {
 }
 
 export class DrawingService implements IService {
-  drawCommands: {[key in Commands]: (params: Array<number>) => any};
+  private drawCommands: {[key in Commands]: (params: Array<number>) => any};
+
   constructor() {
     this.drawCommands = {
       [Commands.DRAW_CIRCLE]: this.drawCircle.bind(this),
@@ -29,10 +30,10 @@ export class DrawingService implements IService {
     return 'draw';
   }
 
-  async process(data: Buffer): Promise<string> {
+  async process(data: Buffer): Promise<Result> {
     const { commandType, params } = this.parseData(data);
     await this.drawCommands[commandType](params);
-    return `${commandType}`;
+    return { command: `draw_${commandType}` };
   }
 
   private parseData(data: Buffer): commandInfo {

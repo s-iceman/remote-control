@@ -1,5 +1,5 @@
-import { IService } from './interfaces';
-import { mouse, right, left, up, down, screen } from '@nut-tree/nut-js';
+import { IService, Result } from './interfaces';
+import { mouse, right, left, up, down } from '@nut-tree/nut-js';
 
 type commandParams = {
   direction: string,
@@ -26,13 +26,14 @@ enum Directions {
 
 
 export class MouseNavService implements IService {
-  moveCommands: {[key in Directions]: [(px: number) => any, null]};
+  private moveCommands: {[key in Directions]: (px: number) => any};
+
   constructor() {
     this.moveCommands = {
-      [Directions.LEFT]: [left, null],
-      [Directions.RIGHT]: [right, null],
-      [Directions.UP]: [up, null],
-      [Directions.DOWN]: [down, null]
+      [Directions.LEFT]: left,
+      [Directions.RIGHT]: right,
+      [Directions.UP]: up,
+      [Directions.DOWN]: down
     };
   }
 
@@ -40,16 +41,19 @@ export class MouseNavService implements IService {
     return 'mouse';
   }
 
-  async process(data: Buffer): Promise<string> {
+  async process(data: Buffer): Promise<Result> {
     const { commandType, params } = this.parseData(data);
     if (commandType === Commands.MOVE) {
       const {direction, offset} = params;
-      const [command, correctedOffset] = this.moveCommands[direction];
+      const command = this.moveCommands[direction];
       await mouse.move(command?.(offset));
-      return `${direction}_${offset}`;
+      return { command: `mouse_${direction}_${offset}` };
     } else if (commandType === Commands.GET_POS) {
       const pos = await mouse.getPosition();
-      return `${commandType}_${pos.x},${pos.y}`;
+      return {
+        command: `mouse_${commandType}_${pos.x},${pos.y}`,
+        answerData: `mouse_position ${pos.x},${pos.y}`
+      };
     }
   }
 
@@ -70,10 +74,5 @@ export class MouseNavService implements IService {
       return {commandType: Commands.GET_POS};
     }
     return {commandType: Commands.INVALID};
-  }
-
-  private async calcLeftOffset(offset: number): Promise<number> {
-    const width = await screen.width();
-    return offset;
   }
 };
