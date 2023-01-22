@@ -5,7 +5,7 @@ import Jimp from 'jimp';
 enum Commands {
   PRINT_SCREEN = 'scrn',
   INVALID = 'invalid'
-};
+}
 
 export class PrintScreenService implements IService {
   private imgSize: number;
@@ -45,4 +45,4 @@ export class PrintScreenService implements IService {
     return (command === Commands.PRINT_SCREEN) ? Commands.PRINT_SCREEN : Commands.INVALID;
   }
 
-};
+}

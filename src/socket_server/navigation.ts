@@ -1,5 +1,5 @@
 import { IService, Result } from './interfaces';
-import { mouse, right, left, up, down } from '@nut-tree/nut-js';
+import { mouse, right, left, up, down, Point } from '@nut-tree/nut-js';
 
 type commandParams = {
   direction: string,
@@ -11,22 +11,24 @@ type commandInfo = {
   params?: commandParams;
 }
 
+type moveFunc = (px: number) => Promise<Point[]>;
+
 enum Commands {
   INVALID = 'invalid',
   MOVE = 'move',
   GET_POS = 'position',
-};
+}
 
 enum Directions {
   LEFT = 'left',
   RIGHT = 'right',
   UP = 'up',
   DOWN = 'down',
-};
+}
 
 
 export class MouseNavService implements IService {
-  private moveCommands: {[key in Directions]: (px: number) => any};
+  private moveCommands: {[key in Directions]: moveFunc};
 
   constructor() {
     this.moveCommands = {
@@ -45,8 +47,8 @@ export class MouseNavService implements IService {
     const { commandType, params } = this.parseData(data);
     if (commandType === Commands.MOVE) {
       const {direction, offset} = params;
-      const command = this.moveCommands[direction];
-      await mouse.move(command?.(offset));
+      const command = <moveFunc>this.moveCommands[direction];
+      await mouse.move(command(offset));
       return { command: `mouse_${direction}_${offset}` };
     } else if (commandType === Commands.GET_POS) {
       const pos = await mouse.getPosition();
@@ -75,4 +77,4 @@ export class MouseNavService implements IService {
     }
     return {commandType: Commands.INVALID};
   }
-};
+}

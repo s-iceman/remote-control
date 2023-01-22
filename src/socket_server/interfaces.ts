@@ -5,7 +5,7 @@ type Result = {
 
 interface ISocketServer {
   start(): void;
-};
+}
 
 interface IService {
   process(data: Buffer): Promise<Result>;

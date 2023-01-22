@@ -7,11 +7,10 @@ import { PrintScreenService } from './print-screen';
 
 export class ServerSocket implements ISocketServer {
   private socket: WebSocketServer;
-  private timerId: NodeJS.Timer;
   private services: Map<string, IService>;
 
   constructor(port: number) {
-    this.socket = new WebSocketServer({port: port});
+    this.socket = new WebSocketServer({port});
     this.services = new Map();
     this.services.set(MouseNavService.getKey(), new MouseNavService());
     this.services.set(DrawingService.getKey(), new DrawingService());
@@ -21,8 +20,6 @@ export class ServerSocket implements ISocketServer {
   start(): void {
     this.socket.on('connection', (ws: WebSocket) => {
       console.log(`HttpServer connected to WebSocketServer on port ${this.socket.options.port} successful`);
-
-      this.timerId = setInterval(() => {}, 100);
       const duplex = WebSocket.createWebSocketStream(ws, {decodeStrings: false});
 
       duplex.on('error', (err: Event) => console.log(err));
@@ -56,7 +53,6 @@ export class ServerSocket implements ISocketServer {
   private addCloseListeners(): void {
     this.socket.on('close', () => {
       console.log('disconnected');
-      clearInterval(this.timerId);
       this.services = null;
     });
   }

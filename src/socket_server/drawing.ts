@@ -7,22 +7,24 @@ enum Commands {
   DRAW_SQUARE = 'square',
   DRAW_RECTANGLE = 'rectangle',
   INVALID = 'invalid'
-};
+}
+
 
 type commandInfo = {
   commandType: Commands;
   params?: Array<number>;
 }
 
+type processFunc = (params: Array<number>) => Promise<void>;
+
 export class DrawingService implements IService {
-  private drawCommands: {[key in Commands]: (params: Array<number>) => any};
+  private drawCommands: {[key in Exclude<Commands, Commands.INVALID>]: processFunc};
 
   constructor() {
     this.drawCommands = {
-      [Commands.DRAW_CIRCLE]: this.drawCircle.bind(this),
-      [Commands.DRAW_SQUARE]: this.drawSquare.bind(this),
-      [Commands.DRAW_RECTANGLE]: this.drawRectangle.bind(this),
-      [Commands.INVALID]: () => {}
+      [Commands.DRAW_CIRCLE]: <processFunc>this.drawCircle.bind(this),
+      [Commands.DRAW_SQUARE]: <processFunc>this.drawSquare.bind(this),
+      [Commands.DRAW_RECTANGLE]: <processFunc>this.drawRectangle.bind(this),
     };
   }
 
@@ -32,7 +34,8 @@ export class DrawingService implements IService {
 
   async process(data: Buffer): Promise<Result> {
     const { commandType, params } = this.parseData(data);
-    await this.drawCommands[commandType](params);
+    const func = <processFunc>this.drawCommands[commandType];
+    await func(params);
     return { command: `draw_${commandType}` };
   }
 
@@ -69,7 +72,7 @@ export class DrawingService implements IService {
         );
       }
     }
-    await mouse.setPosition(points[0]);
+    await mouse.setPosition(<Point>points[0]);
     mouse.config.mouseSpeed = 60;
     await mouse.pressButton(Button.LEFT);
     await mouse.move(points.slice(1));
@@ -93,4 +96,4 @@ export class DrawingService implements IService {
     await mouse.move(straightTo(new Point(point.x, point.y)));
     await mouse.releaseButton(Button.LEFT);
   }
-};
+}
